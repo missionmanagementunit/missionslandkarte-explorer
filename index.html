@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Missionslandkarte Explorer</title>
+  <meta name="description" content="Alle Projekte der EU-Missionen in Österreich — durchsuchbar und anklickbar." />
+  <link rel="icon" href="assets/logos/5Missions_flower.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Asap:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/explorer.css" />
+</head>
+<body>
+
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Missionslandkarte Explorer — Startansicht">
+      <img src="assets/logos/5Missions_flower.svg" alt="" width="36" height="36" />
+      <span>
+        <span class="brand__title">Missionslandkarte Explorer</span>
+        <span class="brand__sub">Alle Projekte der EU-Missionen in Österreich</span>
+      </span>
+    </a>
+    <label class="search">
+      <span class="visually-hidden">Projekt oder Organisation suchen</span>
+      <input type="search" id="search-input" placeholder="Projekt oder Organisation suchen, z. B. BOKU" autocomplete="off" />
+    </label>
+  </header>
+
+  <div class="filterbar">
+    <div class="chips" id="mission-chips" role="group" aria-label="Nach Mission filtern"></div>
+    <div class="selects">
+      <label><span class="visually-hidden">Bundesland</span><select id="filter-bundesland"></select></label>
+      <label><span class="visually-hidden">Quelle</span><select id="filter-source"></select></label>
+      <span class="counter" id="counter" aria-live="polite">Daten werden geladen …</span>
+    </div>
+  </div>
+
+  <main class="stage">
+    <div id="map" class="map" aria-label="Karte der Beteiligungen"></div>
+    <aside id="panel" class="panel" hidden aria-labelledby="panel-title">
+      <button type="button" class="panel__close" aria-label="Schließen">×</button>
+      <div class="panel__content"></div>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    <span id="meta-line"></span>
+    <span>Punkte = österreichische Beteiligungen · dunkler Rand = Koordination</span>
+  </footer>
+
+  <pre id="selftest" hidden></pre>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/panel.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

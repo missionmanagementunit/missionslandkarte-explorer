@@ -33,7 +33,7 @@ BUNDESLAENDER = {"Burgenland", "Kärnten", "Niederösterreich", "Oberösterreich
 
 PROJECT_KEYS = {"id", "acronym", "title", "mission", "source", "programme", "start", "end",
                 "link", "coordinator", "partners_complete"}
-PARTICIPATION_KEYS = {"project_id", "org_id", "name", "role", "city", "bundesland", "lat", "lng",
+PARTICIPATION_KEYS = {"project_id", "org_id", "name", "short_name", "role", "city", "bundesland", "lat", "lng",
                       "geo_source", "funding_eur", "funding_status", "ended", "cordis_listed"}
 
 # Interne Spalten des Workbooks dürfen nie als Feld auftauchen. Als Text-Suche wären sie

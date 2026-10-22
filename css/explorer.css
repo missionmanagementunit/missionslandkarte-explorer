@@ -1,0 +1,197 @@
+/* Layout und Komponenten des Explorers. Farben und Schrift kommen aus tokens.css. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  height: 100dvh;
+  font-family: var(--font-sans);
+  color: var(--neutral-900);
+  background: var(--paper);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+.muted { color: var(--neutral-500); }
+.small { font-size: 13px; }
+
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--terracotta); outline-offset: 2px; }
+
+/* ── Kopfzeile ─────────────────────────────────────────────────────── */
+
+.topbar {
+  display: flex; align-items: center; gap: 24px;
+  padding: 12px 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--neutral-100);
+}
+
+.brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; min-width: 0; }
+.brand > span { display: flex; flex-direction: column; min-width: 0; }
+.brand__title { font-weight: var(--font-weight-bold); font-size: 18px; }
+.brand__sub { color: var(--neutral-500); font-size: 13px; }
+
+.search { flex: 1; max-width: 480px; margin-left: auto; }
+.search input {
+  width: 100%; padding: 9px 14px;
+  border: 1px solid var(--neutral-200); border-radius: 999px;
+  background: var(--neutral-50);
+}
+.search input:focus { background: #fff; }
+
+/* ── Filterleiste ──────────────────────────────────────────────────── */
+
+.filterbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
+  padding: 8px 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--neutral-100);
+  min-width: 0;
+}
+
+.chips { display: flex; gap: 6px; min-width: 0; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px;
+  border: 1px solid var(--neutral-200); border-radius: 999px;
+  background: #fff; cursor: pointer; white-space: nowrap; font-size: 13px;
+}
+.chip:hover { border-color: var(--neutral-400); }
+.chip[aria-pressed="true"] { background: var(--neutral-800); border-color: var(--neutral-800); color: #fff; }
+
+.selects { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.selects select {
+  padding: 5px 8px; border: 1px solid var(--neutral-200); border-radius: 6px; background: #fff; font-size: 13px;
+}
+.counter { color: var(--neutral-600); font-size: 13px; }
+
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
+
+/* ── Karte und Seitenleiste ────────────────────────────────────────── */
+
+.stage { position: relative; min-height: 0; isolation: isolate; }
+.map { position: absolute; inset: 0; background: var(--neutral-50); }
+
+.panel {
+  position: absolute; top: 12px; right: 12px; bottom: 12px;
+  width: min(420px, calc(100% - 24px));
+  z-index: 1000;   /* über Leaflets Ebenen (bis 800) */
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 6px 28px rgba(43, 36, 34, 0.18);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.panel[hidden] { display: none; }
+
+.panel__close {
+  position: sticky; top: 8px; float: right; margin: 8px 8px 0 0;
+  width: 32px; height: 32px; border: none; border-radius: 50%;
+  background: var(--neutral-50); font-size: 20px; line-height: 1; cursor: pointer;
+}
+.panel__close:hover { background: var(--neutral-100); }
+
+.panel__content { padding: 16px 20px 24px; }
+
+.panel__back {
+  border: none; background: none; padding: 0; margin-bottom: 10px;
+  color: var(--terracotta); cursor: pointer; font-size: 13px; text-align: left;
+}
+
+/* ── Projektkarte ──────────────────────────────────────────────────── */
+
+.card__mission { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--neutral-600); }
+.card__acronym { margin: 4px 0 2px; font-size: 24px; line-height: 1.2; overflow-wrap: anywhere; }
+.card__title { margin: 0 0 12px; color: var(--neutral-700); overflow-wrap: anywhere; }
+
+/* Feste Breite der Beschriftung: sonst drückt ein langes Label die Werte in eine schmale Spalte */
+.card__facts { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: 4px 12px; margin: 12px 0; font-size: 14px; }
+.card__facts dt { color: var(--neutral-500); }
+.card__facts dd { margin: 0; overflow-wrap: anywhere; }
+
+.card__link { display: inline-block; margin: 4px 0 8px; color: var(--terracotta); font-weight: var(--font-weight-medium); }
+
+.card__section { margin-top: 18px; }
+.card__section h3 { margin: 0 0 8px; font-size: 15px; }
+.card__abstract p { margin: 0 0 6px; }
+
+.partners, .list { list-style: none; margin: 0; padding: 0; }
+
+.partner, .list__item {
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 8px 10px; margin: 0 -10px;
+  width: calc(100% + 20px);   /* Hover-Fläche reicht bis an den Rand der Karte */
+  border: none; border-radius: 6px; background: none; text-align: left; cursor: pointer;
+}
+.partner:hover:not(:disabled), .list__item:hover { background: var(--neutral-50); }
+.partner:disabled { cursor: default; }
+.partner--lead .partner__name { font-weight: var(--font-weight-semibold); }
+.partner__name { overflow-wrap: anywhere; }
+.partner__where, .partner__meta { font-size: 13px; color: var(--neutral-600); }
+
+/* ── Listen ────────────────────────────────────────────────────────── */
+
+.list__title { margin: 0 40px 4px 0; font-size: 19px; }
+.list__filter {
+  width: 100%; margin: 10px 0; padding: 7px 12px;
+  border: 1px solid var(--neutral-200); border-radius: 6px;
+}
+.list__head { display: flex; align-items: center; gap: 8px; }
+.list__sub { font-size: 13px; color: var(--neutral-600); padding-left: 18px; overflow-wrap: anywhere; }
+
+/* ── Punkte und Bündel ─────────────────────────────────────────────── */
+
+.dot-icon { background: none; border: none; }
+.dot {
+  display: block; width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(43, 36, 34, 0.25);
+}
+.dot--lead { border-color: var(--neutral-900); }
+
+.cluster-icon { background: none; border: none; display: grid; place-items: center; }
+.cluster-icon svg { grid-area: 1 / 1; filter: drop-shadow(0 1px 2px rgba(43, 36, 34, 0.3)); }
+.cluster__count {
+  grid-area: 1 / 1; z-index: 1;
+  font-size: 12px; font-weight: var(--font-weight-bold); color: var(--neutral-900);
+}
+
+/* ── Fußzeile ──────────────────────────────────────────────────────── */
+
+.footer {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px;
+  padding: 6px 20px; font-size: 12px; color: var(--neutral-500);
+  background: #fff; border-top: 1px solid var(--neutral-100);
+}
+
+#selftest { position: fixed; left: 0; bottom: 0; max-height: 50vh; overflow: auto; z-index: 2000; background: #fff; font-size: 11px; }
+
+/* ── Schmale Bildschirme ───────────────────────────────────────────── */
+
+@media (max-width: 760px) {
+  .topbar { flex-wrap: wrap; gap: 10px; padding: 10px 16px; }
+  .search { max-width: none; flex-basis: 100%; }
+  .brand__sub { display: none; }
+  .filterbar { padding: 8px 16px; }
+  /* Die Chips scrollen in ihrer eigenen Zeile — die Seite selbst nie seitwärts */
+  .chips { flex-basis: 100%; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+  .footer { padding: 6px 16px; }
+  .footer > span:last-child { display: none; }
+  .panel {
+    position: fixed; top: auto; left: 0; right: 0; bottom: 0;
+    /* Feste Höhe statt max-height: sonst wächst das Sheet, wenn die Kurzbeschreibung nachlädt,
+       und verdeckt die Punkte, auf die die Karte gerade ausgerichtet wurde */
+    width: 100%; height: 55dvh;
+    border-radius: 14px 14px 0 0;
+  }
+  .panel__content { padding: 12px 16px 24px; }
+}

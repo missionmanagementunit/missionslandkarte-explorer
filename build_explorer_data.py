@@ -372,6 +372,7 @@ def build_eu_projects(curated_eu, orgs, cordis_projects, city_table, polygons, r
                 "project_id": pid,
                 "org_id": org["organisationID"],
                 "name": clean_text(org["name"]),
+                "short_name": clean_text(org["shortName"]) or None,
                 "role": org["role"],
                 "city": city,
                 "bundesland": bundesland,
@@ -416,6 +417,7 @@ def curated_only_participation(cur, city_table):
         "project_id": cur["id"],
         "org_id": None,
         "name": clean_text(cur["organisation"]),
+        "short_name": None,
         "role": CURATED_ROLES.get(cur["Pariticpant Type"]),
         "city": city,
         "bundesland": bundesland,
@@ -432,13 +434,15 @@ def curated_only_participation(cur, city_table):
 # ── FFG, LIFE, Sonstige (nur die kuratierte Zeile) ─────────────────────────────
 
 def build_org_index(orgs):
-    """Index all Austrian CORDIS organisations by normalised name -> (org_id, most common coordinates)."""
+    """Index all Austrian CORDIS organisations by normalised name -> (org_id, most common coordinates, short name)."""
     at = orgs[(orgs["country"] == "AT") & (orgs["geolocation"] != "")]
     index = {}
     for key, grp in at.groupby(at["name"].map(normalise_name)):
         coords = Counter(parse_geolocation(g) for g in grp["geolocation"]).most_common(1)[0][0]
         org_id = grp["organisationID"].mode().iloc[0]
-        index[key] = (org_id, coords)
+        short_names = grp["shortName"][grp["shortName"] != ""]
+        short_name = clean_text(short_names.mode().iloc[0]) if len(short_names) else None
+        index[key] = (org_id, coords, short_name)
     return index
 
 
@@ -460,10 +464,10 @@ def build_other_projects(curated_other, org_index, city_table, polygons, report,
                                               bundesland_at(match[1][0], match[1][1], polygons), bundesland))
             match = None
         if match:
-            org_id, coords = match
+            org_id, coords, short_name = match
             geo_source = "org_match"
         else:
-            org_id, coords = None, city_coords_for(city, bundesland, city_table)
+            org_id, coords, short_name = None, city_coords_for(city, bundesland, city_table), None
             geo_source = "city"
             if coords is None:
                 missing_coords.append((pid, cur["name"], org_name, city, bundesland))
@@ -481,6 +485,7 @@ def build_other_projects(curated_other, org_index, city_table, polygons, report,
             "project_id": pid,
             "org_id": org_id,
             "name": org_name,
+            "short_name": short_name,
             "role": role,
             "city": city,
             "bundesland": bundesland,

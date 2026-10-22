@@ -37,6 +37,16 @@ cp .env.example .env              # Pfad zum Workbook eintragen
 Für EU-Projekte ist CORDIS die Quelle (Rollen, Förderung, Daten, Kurzbeschreibung).
 Natürliche Personen (meist Einzelunternehmen) erscheinen so, wie CORDIS sie veröffentlicht.
 
+## Lokal ansehen und prüfen
+
+```bash
+.venv/bin/python -m http.server 8765    # dann http://127.0.0.1:8765/ öffnen
+```
+
+`http://127.0.0.1:8765/?selftest=1` prüft im Browser, dass jede Beteiligung genau einmal als
+Punkt erscheint (auch je Filter), dass Suche, Stapel-Liste und Deep Links funktionieren, und
+schreibt das Ergebnis unten in die Seite. `#p=<Projekt-ID>` öffnet direkt eine Projektkarte.
+
 ## Datenquellen
 
 - [CORDIS](https://cordis.europa.eu/) — Horizon 2020 / Horizon Europe (CC BY 4.0)

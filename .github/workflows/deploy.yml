@@ -1,8 +1,8 @@
 name: Deploy to GitHub Pages
 
-# Vorerst nur manuell auslösbar: es gibt noch keine Seite zum Ausliefern.
-# Sobald index.html existiert, "push: branches: [main]" ergänzen.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
