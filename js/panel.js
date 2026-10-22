@@ -29,8 +29,10 @@
     return (cfg().missions[mission] || {}).label || mission;
   }
 
-  function swatch(mission) {
-    return `<span class="swatch" style="background:${(cfg().missions[mission] || {}).color || '#888'}"></span>`;
+  /** Mission pentagon as in the presentation (assets/logos/Mission_*.svg). */
+  function missionIcon(mission, size) {
+    const file = (cfg().missions[mission] || {}).icon || 'Climate';
+    return `<img class="tile-mission-icon" src="assets/logos/Mission_${file}.svg" width="${size}" height="${size}" alt="" draggable="false">`;
   }
 
   function countryName(code) {
@@ -95,21 +97,21 @@
 
     return `${back}
       <article class="card">
-        <p class="card__mission">${swatch(project.mission)}${esc(missionLabel(project.mission))}</p>
-        <h2 class="card__acronym" id="panel-title">${esc(project.acronym)}</h2>
-        ${project.title && project.title !== project.acronym ? `<p class="card__title">${esc(project.title)}</p>` : ''}
-        <dl class="card__facts">
+        <div class="tile-mission-row">${missionIcon(project.mission, 28)}<span class="tile-mission-label">${esc(missionLabel(project.mission))}</span></div>
+        <h2 class="tile-name" id="panel-title">${esc(project.acronym)}</h2>
+        ${project.title && project.title !== project.acronym ? `<p class="tile-title">${esc(project.title)}</p>` : ''}
+        <dl class="tile-facts">
           <dt>Programm</dt><dd>${esc(project.programme || c.sources[project.source])}</dd>
           ${formatPeriod(project) ? `<dt>Laufzeit</dt><dd>${esc(formatPeriod(project))}</dd>` : ''}
           <dt>Koordination</dt><dd>${coordinator}</dd>
           ${austrianTotal ? `<dt>EU-Förderung österr. Beteiligte</dt><dd>${esc(_euro.format(austrianTotal))}</dd>` : ''}
         </dl>
-        ${project.link ? `<a class="card__link" href="${esc(project.link)}" target="_blank" rel="noopener">${esc(c.linkLabels[project.source])} ↗</a>` : ''}
-        <section class="card__section">
+        ${project.link ? `<a class="tile-link" href="${esc(project.link)}" target="_blank" rel="noopener">${esc(c.linkLabels[project.source])} ↗</a>` : ''}
+        <section class="tile-section">
           <h3>Kurzbeschreibung</h3>
-          <div class="card__abstract" data-abstract="${esc(project.id)}"><p class="muted">Wird geladen …</p></div>
+          <div class="tile-description" data-abstract="${esc(project.id)}"><p class="muted">Wird geladen …</p></div>
         </section>
-        <section class="card__section">
+        <section class="tile-section">
           <h3>Beteiligte in Österreich <span class="muted">(${parts.length})</span></h3>
           <ul class="partners">${sorted.map(partRow).join('')}</ul>
           ${project.partners_complete ? '' : `<p class="muted small">${esc(c.notes.partnersIncomplete)}</p>`}
@@ -129,7 +131,7 @@
       box.innerHTML = `<p lang="${esc(abstract.lang)}">${esc(abstract.text)}</p>${note}`;
     }).catch(err => {
       console.error('[panel.js] Kurzbeschreibung nicht geladen:', err);
-      const box = _content.querySelector('.card__abstract');
+      const box = _content.querySelector('.tile-description');
       if (box) box.innerHTML = '<p class="muted">Kurzbeschreibung konnte nicht geladen werden.</p>';
     });
   }
@@ -153,7 +155,7 @@
     if (!items.length) return '<p class="muted">Keine Treffer.</p>';
     return `<ul class="list">${items.map(it => `
       <li><button type="button" class="list__item" data-project="${esc(it.projectId)}">
-        <span class="list__head">${swatch(it.mission)}<strong>${esc(it.title)}</strong></span>
+        <span class="list__head">${missionIcon(it.mission, 18)}<strong>${esc(it.title)}</strong></span>
         <span class="list__sub">${esc(it.subtitle)}</span>
       </button></li>`).join('')}</ul>`;
   }
@@ -162,7 +164,7 @@
     const s = _listState;
     _content.innerHTML = `
       <h2 class="list__title" id="panel-title">${esc(s.title)}</h2>
-      ${s.subtitle ? `<p class="muted">${esc(s.subtitle)}</p>` : ''}
+      ${s.subtitle ? `<p class="list__subtitle">${esc(s.subtitle)}</p>` : ''}
       ${s.filterable ? `<input type="search" class="list__filter" placeholder="In dieser Liste suchen" value="${esc(s.filterText || '')}" aria-label="In dieser Liste suchen">` : ''}
       <div class="list__items">${listItems(s)}</div>`;
     const input = _content.querySelector('.list__filter');

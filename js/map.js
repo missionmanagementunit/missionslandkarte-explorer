@@ -70,7 +70,7 @@
     const inner = r * 0.58;
     return L.divIcon({
       html: `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">${shapes}`
-          + `<circle cx="${r}" cy="${r}" r="${inner}" fill="#fff"/></svg>`
+          + `<circle cx="${r}" cy="${r}" r="${inner}" fill="#2b2422"/></svg>`
           + `<span class="cluster__count">${total}</span>`,
       className: 'cluster-icon',
       iconSize: [size, size],
@@ -79,23 +79,46 @@
 
   // ── Grundkarte ────────────────────────────────────────────────────────
 
+  /** Ray-casting: is [lng, lat] inside the ring? */
+  function _pointInRing([x, y], ring) {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i], [xj, yj] = ring[j];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  }
+
+  /** A ring counts as inside another when a clear majority of its points are (shared borders are fuzzy). */
+  function _ringInside(ring, other) {
+    const sample = ring.filter((_, i) => i % 5 === 0);
+    return sample.filter(pt => _pointInRing(pt, other)).length > sample.length * 0.8;
+  }
+
   function _addAustria(map) {
     fetch(GEOJSON_URL)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(data => {
         const world = [[-90, -180], [-90, 180], [90, 180], [90, -180]];
-        const holes = [];
+        const rings = [];
         data.features.forEach(f => {
           const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
-          polys.forEach(poly => holes.push(poly[0].map(([lng, lat]) => [lat, lng])));
+          polys.forEach(poly => rings.push(poly[0]));
         });
-        // Alles außerhalb Österreichs leicht abdecken, damit die Punkte im Vordergrund stehen
-        L.polygon([world, ...holes], {
-          stroke: false, fillColor: '#faf6f4', fillOpacity: 0.72, interactive: false,
-        }).addTo(map);
+        // Wien liegt im Außenring von Niederösterreich. Beide Ringe auszuschneiden hieße Wien doppelt
+        // ausschneiden — bei gerade/ungerade-Füllung ist es dann wieder dunkel (so auch in der Präsentation).
+        // Darum nur Ringe ausschneiden, die nicht in einem anderen Ring liegen.
+        const holes = rings
+          .filter(ring => !rings.some(other => other !== ring && _ringInside(ring, other)))
+          .map(ring => ring.map(([lng, lat]) => [lat, lng]));
+        // Grenzen und Maske mit denselben Werten wie in der Präsentation (map.js dort)
         L.geoJSON(data, {
-          style: { fill: false, color: '#9a7e7a', weight: 1, opacity: 0.7, dashArray: '4 4' },
+          style: { fill: false, color: 'rgba(184,163,159,0.55)', weight: 1, dashArray: '5 4' },
           interactive: false,
+        }).addTo(map);
+        L.polygon([world, ...holes], {
+          color: 'rgba(200,184,176,0.75)', weight: 1.5,
+          fillColor: '#1a1410', fillOpacity: 0.62, interactive: false,
         }).addTo(map);
       })
       .catch(err => console.error('[map.js] Bundesländer-Grenzen nicht geladen:', err));

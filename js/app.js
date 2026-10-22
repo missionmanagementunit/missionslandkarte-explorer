@@ -19,33 +19,109 @@
   let mapCtrl = null;
   const filter = { missions: null, bundesland: null, source: null, query: '' };
 
-  // ── Filter-Leiste ─────────────────────────────────────────────────────
+  // ── Seitenleiste: Legende, Quelle, aktive Filter ──────────────────────
 
-  function buildFilterBar() {
-    const c = window.EXPLORER_CONFIG;
-    document.getElementById('mission-chips').innerHTML = Object.entries(c.missions).map(([key, m]) =>
-      `<button type="button" class="chip" data-mission="${key}" aria-pressed="false">
-         <span class="swatch" style="background:${m.color}"></span>${esc(m.label)}</button>`).join('');
-    document.getElementById('filter-bundesland').innerHTML =
-      '<option value="">Alle Bundesländer</option>' + BUNDESLAENDER.map(b => `<option>${esc(b)}</option>`).join('');
-    document.getElementById('filter-source').innerHTML =
-      '<option value="">Alle Quellen</option>' + Object.entries(c.sources).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('');
+  // Reihenfolge wie in der Legende der Präsentation
+  const LEGEND_BUNDESLAENDER = ['Wien', 'Niederösterreich', 'Oberösterreich', 'Steiermark',
+                                'Tirol', 'Salzburg', 'Kärnten', 'Vorarlberg', 'Burgenland'];
+  let legendView = 'mission';   // 'mission' | 'bundesland'
 
-    document.getElementById('mission-chips').addEventListener('click', e => {
-      const chip = e.target.closest('.chip');
-      if (!chip) return;
-      chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
-      const pressed = [...document.querySelectorAll('.chip[aria-pressed="true"]')].map(b => b.dataset.mission);
-      filter.missions = pressed.length ? new Set(pressed) : null;  // keine gewählt = alle
+  /**
+   * Count projects per legend entry. Each count respects all other active filters
+   * but not the list's own dimension — so the numbers show what clicking would give.
+   */
+  function legendCounts() {
+    if (legendView === 'mission') {
+      return Object.keys(window.EXPLORER_CONFIG.missions).map(key => ({
+        key, count: D.matchingProjects(data, { ...filter, missions: new Set([key]) }).length,
+      }));
+    }
+    return LEGEND_BUNDESLAENDER.map(key => ({
+      key, count: D.matchingProjects(data, { ...filter, bundesland: key }).length,
+    }));
+  }
+
+  function renderLegend() {
+    const missions = window.EXPLORER_CONFIG.missions;
+    const activeMission = filter.missions ? [...filter.missions][0] : null;
+    document.getElementById('legend-list').innerHTML = legendCounts().map(({ key, count }) => {
+      const isMission = legendView === 'mission';
+      const active = isMission ? key === activeMission : key === filter.bundesland;
+      const icon = isMission
+        ? `<img src="assets/logos/Mission_${missions[key].icon}.svg" class="legend-icon" width="24" height="24" alt="" draggable="false">`
+        : '<span class="legend-dot"></span>';
+      const label = isMission ? missions[key].label : key;
+      return `<button type="button" class="legend-item${active ? ' active' : ''}${count ? '' : ' is-empty'}"
+                data-key="${esc(key)}" aria-pressed="${active}">
+          ${icon}<span class="legend-label">${esc(label)}</span><span class="legend-count">${_number.format(count)}</span>
+        </button>`;
+    }).join('');
+
+    document.querySelectorAll('.legend-toggle-btn').forEach(btn => {
+      const on = btn.dataset.view === legendView;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-selected', String(on));
+    });
+
+    // Aktive Filter als Pillen — auch der aus der gerade ausgeblendeten Liste
+    const pills = [];
+    if (activeMission) pills.push(['mission', missions[activeMission].label]);
+    if (filter.bundesland) pills.push(['bundesland', filter.bundesland]);
+    const box = document.getElementById('active-filters');
+    box.hidden = !pills.length;
+    box.innerHTML = pills.map(([type, label]) =>
+      `<button type="button" class="filter-pill" data-clear="${type}" aria-label="Filter ${esc(label)} entfernen">${esc(label)}<span class="filter-pill__x" aria-hidden="true">×</span></button>`).join('');
+
+    document.querySelectorAll('.source-btn').forEach(btn =>
+      btn.classList.toggle('active', (btn.dataset.source || null) === filter.source));
+  }
+
+  function buildSidebar() {
+    const sources = window.EXPLORER_CONFIG.sources;
+    document.getElementById('source-toggle').innerHTML =
+      `<button type="button" class="source-btn active" data-source="">Alle</button>`
+      + Object.entries(sources).map(([k, v]) =>
+        `<button type="button" class="source-btn" data-source="${k}">${esc(k === 'eu_fp' ? 'EU' : v)}</button>`).join('');
+
+    document.querySelector('.legend-toggle').addEventListener('click', e => {
+      const btn = e.target.closest('.legend-toggle-btn');
+      if (!btn) return;
+      legendView = btn.dataset.view;   // Umschalten löscht keinen Filter — Kombinationen bleiben
+      renderLegend();
+    });
+    document.getElementById('legend-list').addEventListener('click', e => {
+      const item = e.target.closest('.legend-item');
+      if (!item) return;
+      const key = item.dataset.key;
+      if (legendView === 'mission') {
+        const same = filter.missions && filter.missions.has(key);
+        filter.missions = same ? null : new Set([key]);   // zweiter Klick hebt auf, wie in der Präsentation
+      } else {
+        filter.bundesland = filter.bundesland === key ? null : key;
+      }
       applyFilter();
     });
-    document.getElementById('filter-bundesland').addEventListener('change', e => {
-      filter.bundesland = e.target.value || null;
+    document.getElementById('active-filters').addEventListener('click', e => {
+      const pill = e.target.closest('.filter-pill');
+      if (!pill) return;
+      if (pill.dataset.clear === 'mission') filter.missions = null;
+      else filter.bundesland = null;
       applyFilter();
     });
-    document.getElementById('filter-source').addEventListener('change', e => {
-      filter.source = e.target.value || null;
+    document.getElementById('source-toggle').addEventListener('click', e => {
+      const btn = e.target.closest('.source-btn');
+      if (!btn) return;
+      filter.source = btn.dataset.source || null;
       applyFilter();
+    });
+
+    // Schublade auf schmalen Bildschirmen
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.getElementById('filter-toggle');
+    toggle.addEventListener('click', () => {
+      const open = !sidebar.classList.contains('open');
+      sidebar.classList.toggle('open', open);
+      toggle.setAttribute('aria-expanded', String(open));
     });
 
     let timer = null;
@@ -61,13 +137,14 @@
     });
   }
 
-  /** Re-render dots and the counter for the current filter. */
+  /** Re-render dots, legend and counter for the current filter. */
   function applyFilter() {
     const parts = D.visibleParticipations(data, filter);
     mapCtrl.render(parts);
     const projects = new Set(parts.map(p => p.project_id)).size;
     document.getElementById('counter').textContent =
       `${_number.format(projects)} Projekte · ${_number.format(parts.length)} Beteiligungen auf der Karte`;
+    renderLegend();
     return parts;
   }
 
@@ -117,7 +194,7 @@
 
     D.load().then(loaded => {
       data = loaded;
-      buildFilterBar();
+      buildSidebar();
       mapCtrl.map.invalidateSize({ pan: false });  // sofort, nicht erst beim nächsten ResizeObserver-Takt
       applyFilter();
       document.getElementById('meta-line').innerHTML =
@@ -172,6 +249,25 @@
     filter.bundesland = null;
     applyFilter();
 
+    // Seitenleiste über die echte Oberfläche: Mission + Bundesland kombiniert
+    const clickLegend = key => document.querySelector(`.legend-item[data-key="${key}"]`).click();
+    const clickToggle = view => document.querySelector(`.legend-toggle-btn[data-view="${view}"]`).click();
+    clickToggle('mission');
+    clickLegend('soil');
+    clickToggle('bundesland');
+    const tirolCount = Number(document.querySelector('.legend-item[data-key="Tirol"] .legend-count').textContent.replace(/\D/g, ''));
+    clickLegend('Tirol');
+    const combo = D.visibleParticipations(data, filter);
+    const comboProjects = new Set(combo.map(p => p.project_id)).size;
+    check('Kombination Mission + Bundesland bleibt aktiv',
+      filter.missions && filter.missions.has('soil') && filter.bundesland === 'Tirol'
+      && document.querySelectorAll('.filter-pill').length === 2, `${document.querySelectorAll('.filter-pill').length} Pillen`);
+    check('Kombination: richtige Punkte', renderedMatches(combo), `${mapCtrl.renderedUids().length} Punkte`);
+    check('Legendenzahl = Projekte nach Klick', tirolCount === comboProjects, `Legende ${tirolCount}, Projekte ${comboProjects}`);
+    document.querySelectorAll('.filter-pill').forEach(() => document.querySelector('.filter-pill').click());
+    check('Pillen heben Filter auf', !filter.missions && !filter.bundesland && renderedMatches(D.visibleParticipations(data, filter)), '');
+    clickToggle('mission');
+
     const boku = D.matchingProjects(data, { ...filter, query: 'BOKU' }).length;
     check('Suche „BOKU“ findet Projekte', boku > 0, `${boku}`);
 
@@ -221,7 +317,7 @@
 
     D.loadAbstract('101093985').then(a => {
       setTimeout(() => {
-        const text = document.querySelector('.card__abstract').textContent;
+        const text = document.querySelector('.tile-description').textContent;
         check('Kurzbeschreibung geladen', !!a && text.includes(a.text.slice(0, 40)), '');
         const out = document.getElementById('selftest');
         out.hidden = false;

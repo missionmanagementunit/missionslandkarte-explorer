@@ -16,41 +16,51 @@
 </head>
 <body>
 
-  <header class="topbar">
-    <a class="brand" href="./" aria-label="Missionslandkarte Explorer — Startansicht">
-      <img src="assets/logos/5Missions_flower.svg" alt="" width="36" height="36" />
-      <span>
-        <span class="brand__title">Missionslandkarte Explorer</span>
-        <span class="brand__sub">Alle Projekte der EU-Missionen in Österreich</span>
-      </span>
+  <!-- Kopfzeile wie in der Präsentation: dunkel, FFG-Logo links -->
+  <header class="app-header">
+    <a class="header-logo" href="./" aria-label="Missionslandkarte Explorer — Startansicht">
+      <img src="assets/logos/FFG_white.png" alt="FFG" />
     </a>
-    <label class="search">
+    <span class="header-title">Missionslandkarte Explorer</span>
+    <label class="header-search">
       <span class="visually-hidden">Projekt oder Organisation suchen</span>
       <input type="search" id="search-input" placeholder="Projekt oder Organisation suchen, z. B. BOKU" autocomplete="off" />
     </label>
+    <button type="button" class="filter-toggle" id="filter-toggle" aria-controls="sidebar" aria-expanded="false">Filter</button>
   </header>
 
-  <div class="filterbar">
-    <div class="chips" id="mission-chips" role="group" aria-label="Nach Mission filtern"></div>
-    <div class="selects">
-      <label><span class="visually-hidden">Bundesland</span><select id="filter-bundesland"></select></label>
-      <label><span class="visually-hidden">Quelle</span><select id="filter-source"></select></label>
-      <span class="counter" id="counter" aria-live="polite">Daten werden geladen …</span>
-    </div>
-  </div>
+  <div class="app-body">
+    <!-- Seitenleiste wie Folie 2: Umschalter, Legende mit Zahlen, Missionsblume -->
+    <aside class="sidebar" id="sidebar" aria-label="Filter">
+      <div class="legend-toggle" role="tablist">
+        <button type="button" class="legend-toggle-btn active" data-view="mission" role="tab" aria-selected="true">Nach Mission</button>
+        <button type="button" class="legend-toggle-btn" data-view="bundesland" role="tab" aria-selected="false">Nach Bundesland</button>
+      </div>
+      <div class="active-filters" id="active-filters" hidden></div>
+      <div class="legend-list" id="legend-list"></div>
 
-  <main class="stage">
-    <div id="map" class="map" aria-label="Karte der Beteiligungen"></div>
-    <aside id="panel" class="panel" hidden aria-labelledby="panel-title">
-      <button type="button" class="panel__close" aria-label="Schließen">×</button>
-      <div class="panel__content"></div>
+      <div class="sidebar-section">
+        <span class="sidebar-section__title">Quelle</span>
+        <div class="source-toggle" id="source-toggle" role="group" aria-label="Nach Quelle filtern"></div>
+      </div>
+
+      <p class="sidebar-counter" id="counter" aria-live="polite">Daten werden geladen …</p>
+
+      <div class="legend-flower">
+        <img src="assets/logos/5Missions_flower.svg" alt="" width="56" height="56" />
+        <span class="legend-flower-label">Die 5 EU-Missionen</span>
+        <span class="sidebar-meta" id="meta-line"></span>
+      </div>
     </aside>
-  </main>
 
-  <footer class="footer">
-    <span id="meta-line"></span>
-    <span>Punkte = österreichische Beteiligungen · dunkler Rand = Koordination</span>
-  </footer>
+    <main class="map-area">
+      <div id="map" class="map-container" aria-label="Karte der Beteiligungen"></div>
+      <aside id="panel" class="panel" hidden aria-labelledby="panel-title">
+        <button type="button" class="tile-close panel__close" aria-label="Schließen">×</button>
+        <div class="panel__content"></div>
+      </aside>
+    </main>
+  </div>
 
   <pre id="selftest" hidden></pre>
 

@@ -7,11 +7,11 @@
   window.EXPLORER_CONFIG = {
     // Missionen — Bezeichnungen und Farben wie in der Präsentation
     missions: {
-      climate: { label: 'Klimawandel meistern',         color: '#d34a56' },
-      cities:  { label: 'Klimaneutrale Stadt',          color: '#76a772' },
-      cancer:  { label: 'Krebs besiegen',               color: '#d39c45' },
-      soil:    { label: 'Gesunde Böden',                color: '#7d5e9c' },
-      water:   { label: 'Wasser und Gewässer schützen', color: '#6a8cb7' },
+      climate: { label: 'Klimawandel meistern',         color: '#d34a56', icon: 'Climate' },
+      cities:  { label: 'Klimaneutrale Stadt',          color: '#76a772', icon: 'Cities' },
+      cancer:  { label: 'Krebs besiegen',               color: '#d39c45', icon: 'Cancer' },
+      soil:    { label: 'Gesunde Böden',                color: '#7d5e9c', icon: 'Soil' },
+      water:   { label: 'Wasser und Gewässer schützen', color: '#6a8cb7', icon: 'Waters' },
     },
 
     sources: {
