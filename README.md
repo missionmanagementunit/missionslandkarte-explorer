@@ -1,0 +1,30 @@
+# Missionslandkarte Explorer
+
+**Alle Projekte der EU-Missionen in Österreich — durchsuchbar und anklickbar**
+
+Entwickelt von der FFG (Österreichische Forschungsförderungsgesellschaft).
+
+---
+
+⚠️ **Work in Progress** — Dieses Projekt befindet sich im Aufbau.
+Inhalte und Daten sind vorläufig und nicht als finale Aussagen der FFG zu verstehen.
+
+---
+
+## Was ist das?
+
+Eine eigenständige Karte zum Erkunden: Jeder Punkt ist eine österreichische
+Organisation in einem Projekt. Ein Klick öffnet die Projektkarte mit
+Kurzbeschreibung, Koordination, allen österreichischen Beteiligten und deren Förderung.
+
+Der Explorer ist **unabhängig von der Präsentation**
+[missionslandkarte](https://github.com/missionmanagementunit/missionslandkarte)
+und ersetzt sie nicht. Die Präsentation zählt Projekte, der Explorer zeigt Beteiligungen.
+
+## Datenquellen
+
+- [CORDIS](https://cordis.europa.eu/) — Horizon 2020 / Horizon Europe (CC BY 4.0)
+- [LIFE-Projektdatenbank](https://webgate.ec.europa.eu/life/publicWebsite/)
+- [FFG-Projektdatenbank](https://projekte.ffg.at/)
+
+Für Rückfragen: [ffg.at](https://www.ffg.at)

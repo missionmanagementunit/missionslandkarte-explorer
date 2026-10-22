@@ -1,0 +1,27 @@
+*.code-workspace
+.DS_Store
+CLAUDE.md
+CLAUDE-*.md
+
+# Lokale Konfiguration (u.a. Pfad zum Quell-Workbook) — siehe .env.example
+.env
+
+# Python-Umgebung
+.venv/
+__pycache__/
+
+# Quell-Workbooks bleiben lokal — enthalten interne Klassifikations-Scores
+# und Datei-Metadaten. Das Repo ist öffentlich.
+*.xlsx
+~$*
+
+# Zwischengespeicherte CORDIS-/LIFE-/FFG-Downloads des Build-Skripts
+cache/
+
+# Auswertungen und Referenzdokumente bleiben lokal
+reports/
+*.docx
+*.doc
+*.pptx
+*.pdf
+*.odt

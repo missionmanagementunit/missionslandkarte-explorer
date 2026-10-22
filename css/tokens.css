@@ -1,0 +1,37 @@
+/* Design-Tokens, einmalig aus missionslandkarte/css/tokens.css übernommen.
+   Bewusst eine Kopie, kein geteiltes Modul — die beiden Repos entwickeln sich unabhängig. */
+:root {
+  /* Mission Farben */
+  --m-climate:     #d34a56;
+  --m-cities:      #76a772;
+  --m-cancer:      #d39c45;
+  --m-soil:        #7d5e9c;
+  --m-water:       #6a8cb7;
+
+  /* Neutrale Palette (Taupe-Anker-System) */
+  --paper:         #faf6f4;
+  --neutral-50:    #f5efed;
+  --neutral-100:   #e9e0dd;
+  --neutral-200:   #d6c8c4;
+  --neutral-300:   #b8a39f;
+  --neutral-400:   #9a7e7a;   /* Taupe-Anker */
+  --neutral-500:   #85746f;
+  --neutral-600:   #695b57;
+  --neutral-700:   #514643;
+  --neutral-800:   #3d3431;
+  --neutral-900:   #2b2422;
+
+  /* FFG Brand */
+  --ffg-red:       #e30613;
+  --terracotta:    #b5604a;
+
+  /* Typografie */
+  --font-sans:     'Asap', system-ui, sans-serif;
+  --font-weight-regular:  400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  /* Animationen */
+  --transition-fast:   150ms ease;
+}

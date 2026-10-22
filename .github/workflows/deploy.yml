@@ -1,0 +1,55 @@
+name: Deploy to GitHub Pages
+
+# Vorerst nur manuell auslösbar: es gibt noch keine Seite zum Ausliefern.
+# Sobald index.html existiert, "push: branches: [main]" ergänzen.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Re-runs would leave a stale "github-pages" artifact from the previous
+      # attempt, causing deploy-pages to fail with "Multiple artifacts found".
+      # Delete any such leftovers before uploading the fresh artifact.
+      - name: Delete stale github-pages artifacts
+        run: |
+          gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+            --jq '.artifacts[] | select(.name=="github-pages") | .id' | \
+          while read -r id; do
+            gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/$id" || true
+          done
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # Publish only the runtime files. Uploading the repo root would also serve
+      # build scripts, caches and other working files publicly.
+      # New runtime files must be added here explicitly.
+      - name: Stage site files
+        run: |
+          mkdir -p _site/data
+          cp -R index.html css js assets _site/
+          cp data/*.json _site/data/
+          find _site -name .gitkeep -delete
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - uses: actions/deploy-pages@v4
+        id: deployment
