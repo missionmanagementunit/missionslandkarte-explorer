@@ -95,8 +95,9 @@
     return sample.filter(pt => _pointInRing(pt, other)).length > sample.length * 0.8;
   }
 
+  /** Draw borders and mask; resolves to {Bundesland: LatLngBounds} for zooming to one state. */
   function _addAustria(map) {
-    fetch(GEOJSON_URL)
+    return fetch(GEOJSON_URL)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(data => {
         const world = [[-90, -180], [-90, 180], [90, 180], [90, -180]];
@@ -120,8 +121,15 @@
           color: 'rgba(200,184,176,0.75)', weight: 1.5,
           fillColor: '#1a1410', fillOpacity: 0.62, interactive: false,
         }).addTo(map);
+
+        const bounds = {};
+        data.features.forEach(f => { bounds[f.properties.name] = L.geoJSON(f).getBounds(); });
+        return bounds;
       })
-      .catch(err => console.error('[map.js] Bundesländer-Grenzen nicht geladen:', err));
+      .catch(err => {
+        console.error('[map.js] Bundesländer-Grenzen nicht geladen:', err);
+        return {};
+      });
   }
 
   // ── Fabrik ────────────────────────────────────────────────────────────
@@ -132,14 +140,15 @@
    * handlers.onStackClick(parts) — a stack too big to fan out was clicked
    */
   function create(containerId, handlers) {
-    const map = L.map(containerId, { maxZoom: MAX_ZOOM, zoomSnap: 0.5, zoomControl: true });
+    // Viertelstufen: ein Bundesland soll die Karte möglichst füllen, halbe Stufen ließen oft ein Viertel leer
+    const map = L.map(containerId, { maxZoom: MAX_ZOOM, zoomSnap: 0.25, zoomDelta: 0.5, zoomControl: true });
     map.fitBounds(AUSTRIA_BOUNDS, { padding: START_PADDING });
 
     // Leaflet misst seinen Container nur beim Start. Wird die Filterleiste danach höher
     // (Chips geladen, Umbruch, Drehen des Handys), stimmen sonst alle Zoom-Berechnungen nicht.
     new ResizeObserver(() => map.invalidateSize({ pan: false })).observe(map.getContainer());
     L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: MAX_ZOOM }).addTo(map);
-    _addAustria(map);
+    const bundeslandBounds = _addAustria(map);
 
     const clusters = L.markerClusterGroup({
       maxClusterRadius: CLUSTER_RADIUS,
@@ -228,6 +237,26 @@
       else map.flyToBounds(L.latLngBounds(located), { ...options, duration: 0.8 });
     }
 
+    /**
+     * Zoom to the Bundesland selection: exactly one -> that state fills the map,
+     * none or several -> all of Austria. covered/animate as in focusParts.
+     * Resolves once the view is set (the borders may still be loading on first use).
+     */
+    function fitBundeslaender(names, covered, animate) {
+      return bundeslandBounds.then(bounds => {
+        map.invalidateSize({ pan: false });
+        const target = names.length === 1 && bounds[names[0]] ? bounds[names[0]] : L.latLngBounds(AUSTRIA_BOUNDS);
+        const [right, bottom] = covered || [0, 0];
+        const options = {
+          paddingTopLeft: START_PADDING,
+          paddingBottomRight: [right + START_PADDING[0], bottom + START_PADDING[1]],
+        };
+        if (animate === false) map.fitBounds(target, { ...options, animate: false });
+        else map.flyToBounds(target, { ...options, duration: 0.8 });
+        return target;
+      });
+    }
+
     /** Count located parts whose dot lies outside the visible map area (not under the panel). */
     function partsOutsideView(parts, covered) {
       const [right, bottom] = covered || [0, 0];
@@ -266,7 +295,7 @@
       return clusters.getLayers().map(m => m.part.uid);
     }
 
-    return { map, render, highlightParts, clearHighlight, focusParts, partsOutsideView, showPart, renderedUids, highlightCount, testClickClusterOf };
+    return { map, render, highlightParts, clearHighlight, focusParts, fitBundeslaender, partsOutsideView, showPart, renderedUids, highlightCount, testClickClusterOf };
   }
 
   window.EXPLORER_MAP = { create };

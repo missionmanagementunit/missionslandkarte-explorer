@@ -67,7 +67,7 @@
   // ── Filter ──────────────────────────────────────────────────────────────
 
   /**
-   * filter = { missions: Set|null, bundesland: string|null, source: string|null, query: string }
+   * filter = { missions: Set|null, bundeslaender: Set|null, source: string|null, query: string }
    * Mission, Quelle und Suchtext wirken auf Projekte, das Bundesland auf die einzelne Beteiligung.
    */
   function projectMatches(project, filter) {
@@ -102,15 +102,15 @@
     return data.participations.filter(part =>
       part.lat !== null
       && projectMatches(part.project, filter)
-      && (!filter.bundesland || part.bundesland === filter.bundesland));
+      && (!filter.bundeslaender || filter.bundeslaender.has(part.bundesland)));
   }
 
   /** Projects that match the filter (for the search result list). */
   function matchingProjects(data, filter) {
     return data.projects.filter(p => {
       if (!projectMatches(p, filter)) return false;
-      if (!filter.bundesland) return true;
-      return data.partsByProject.get(p.id).some(x => x.bundesland === filter.bundesland);
+      if (!filter.bundeslaender) return true;
+      return data.partsByProject.get(p.id).some(x => filter.bundeslaender.has(x.bundesland));
     });
   }
 

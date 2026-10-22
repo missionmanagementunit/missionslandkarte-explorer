@@ -17,7 +17,7 @@
 
   let data = null;
   let mapCtrl = null;
-  const filter = { missions: null, bundesland: null, source: null, query: '' };
+  const filter = { missions: null, bundeslaender: null, source: null, query: '' };
 
   // ── Seitenleiste: Legende, Quelle, aktive Filter ──────────────────────
 
@@ -37,7 +37,7 @@
       }));
     }
     return LEGEND_BUNDESLAENDER.map(key => ({
-      key, count: D.matchingProjects(data, { ...filter, bundesland: key }).length,
+      key, count: D.matchingProjects(data, { ...filter, bundeslaender: new Set([key]) }).length,
     }));
   }
 
@@ -46,7 +46,7 @@
     const activeMission = filter.missions ? [...filter.missions][0] : null;
     document.getElementById('legend-list').innerHTML = legendCounts().map(({ key, count }) => {
       const isMission = legendView === 'mission';
-      const active = isMission ? key === activeMission : key === filter.bundesland;
+      const active = isMission ? key === activeMission : !!(filter.bundeslaender && filter.bundeslaender.has(key));
       const icon = isMission
         ? `<img src="assets/logos/Mission_${missions[key].icon}.svg" class="legend-icon" width="24" height="24" alt="" draggable="false">`
         : '<span class="legend-dot"></span>';
@@ -66,7 +66,7 @@
     // Aktive Filter als Pillen — auch der aus der gerade ausgeblendeten Liste
     const pills = [];
     if (activeMission) pills.push(['mission', missions[activeMission].label]);
-    if (filter.bundesland) pills.push(['bundesland', filter.bundesland]);
+    (filter.bundeslaender ? [...filter.bundeslaender] : []).forEach(b => pills.push([`bundesland:${b}`, b]));
     const box = document.getElementById('active-filters');
     box.hidden = !pills.length;
     box.innerHTML = pills.map(([type, label]) =>
@@ -97,16 +97,22 @@
         const same = filter.missions && filter.missions.has(key);
         filter.missions = same ? null : new Set([key]);   // zweiter Klick hebt auf, wie in der Präsentation
       } else {
-        filter.bundesland = filter.bundesland === key ? null : key;
+        toggleBundesland(key);   // mehrere Bundesländer möglich
       }
       applyFilter();
+      if (legendView === 'bundesland') zoomToBundeslaender();
     });
     document.getElementById('active-filters').addEventListener('click', e => {
       const pill = e.target.closest('.filter-pill');
       if (!pill) return;
-      if (pill.dataset.clear === 'mission') filter.missions = null;
-      else filter.bundesland = null;
-      applyFilter();
+      if (pill.dataset.clear === 'mission') {
+        filter.missions = null;
+        applyFilter();
+      } else {
+        toggleBundesland(pill.dataset.clear.slice('bundesland:'.length));
+        applyFilter();
+        zoomToBundeslaender();
+      }
     });
     document.getElementById('source-toggle').addEventListener('click', e => {
       const btn = e.target.closest('.source-btn');
@@ -137,6 +143,18 @@
     });
   }
 
+  /** Add or remove one Bundesland from the selection; an empty selection means "all". */
+  function toggleBundesland(name) {
+    const set = new Set(filter.bundeslaender || []);
+    if (set.has(name)) set.delete(name); else set.add(name);
+    filter.bundeslaender = set.size ? set : null;
+  }
+
+  /** One Bundesland selected: it fills the map. None or several: all of Austria. */
+  function zoomToBundeslaender(animate) {
+    return mapCtrl.fitBundeslaender(filter.bundeslaender ? [...filter.bundeslaender] : [], panelCover(), animate);
+  }
+
   /** Re-render dots, legend and counter for the current filter. */
   function applyFilter() {
     const parts = D.visibleParticipations(data, filter);
@@ -163,6 +181,7 @@
 
   /** Pixels of the map hidden by the open panel: [right, bottom]. */
   function panelCover() {
+    if (!P.isOpen()) return [0, 0];   // ein verborgenes Panel hat ein Null-Rechteck — nichts verdeckt
     const panel = document.getElementById('panel').getBoundingClientRect();
     const map = document.getElementById('map').getBoundingClientRect();
     const sheet = panel.width >= map.width - 1;  // Bottom-Sheet auf schmalen Bildschirmen
@@ -243,10 +262,10 @@
     });
     filter.missions = null;
     BUNDESLAENDER.forEach(b => {
-      filter.bundesland = b;
+      filter.bundeslaender = new Set([b]);
       check(`Bundesland ${b}`, renderedMatches(applyFilter()), `${mapCtrl.renderedUids().length}`);
     });
-    filter.bundesland = null;
+    filter.bundeslaender = null;
     applyFilter();
 
     // Seitenleiste über die echte Oberfläche: Mission + Bundesland kombiniert
@@ -260,12 +279,12 @@
     const combo = D.visibleParticipations(data, filter);
     const comboProjects = new Set(combo.map(p => p.project_id)).size;
     check('Kombination Mission + Bundesland bleibt aktiv',
-      filter.missions && filter.missions.has('soil') && filter.bundesland === 'Tirol'
+      filter.missions && filter.missions.has('soil') && filter.bundeslaender && filter.bundeslaender.has('Tirol')
       && document.querySelectorAll('.filter-pill').length === 2, `${document.querySelectorAll('.filter-pill').length} Pillen`);
     check('Kombination: richtige Punkte', renderedMatches(combo), `${mapCtrl.renderedUids().length} Punkte`);
     check('Legendenzahl = Projekte nach Klick', tirolCount === comboProjects, `Legende ${tirolCount}, Projekte ${comboProjects}`);
     document.querySelectorAll('.filter-pill').forEach(() => document.querySelector('.filter-pill').click());
-    check('Pillen heben Filter auf', !filter.missions && !filter.bundesland && renderedMatches(D.visibleParticipations(data, filter)), '');
+    check('Pillen heben Filter auf', !filter.missions && !filter.bundeslaender && renderedMatches(D.visibleParticipations(data, filter)), '');
     clickToggle('mission');
 
     const boku = D.matchingProjects(data, { ...filter, query: 'BOKU' }).length;
@@ -319,10 +338,50 @@
       setTimeout(() => {
         const text = document.querySelector('.tile-description').textContent;
         check('Kurzbeschreibung geladen', !!a && text.includes(a.text.slice(0, 40)), '');
-        const out = document.getElementById('selftest');
-        out.hidden = false;
-        out.textContent = JSON.stringify(result, null, 1);
+        runZoomChecks(check).then(() => {
+          const out = document.getElementById('selftest');
+          out.hidden = false;
+          out.textContent = JSON.stringify(result, null, 1);
+        });
       }, 0);
+    });
+  }
+
+  /** Zoom checks: one Bundesland fills the visible map (beside the open card), several show Austria. */
+  function runZoomChecks(check) {
+    const m = mapCtrl.map;
+    const visibleBox = () => {
+      const [right, bottom] = panelCover();
+      const size = m.getSize();
+      return { w: size.x - right, h: size.y - bottom };
+    };
+    const pixelBox = bounds => {
+      const nw = m.latLngToContainerPoint(bounds.getNorthWest());
+      const se = m.latLngToContainerPoint(bounds.getSouthEast());
+      return { x0: nw.x, y0: nw.y, x1: se.x, y1: se.y };
+    };
+    const insideView = (box, view) => box.x0 >= -1 && box.y0 >= -1 && box.x1 <= view.w + 1 && box.y1 <= view.h + 1;
+
+    filter.bundeslaender = new Set(['Tirol']);
+    applyFilter();
+    // Projektkarte bleibt offen — Tirol muss neben bzw. über ihr Platz finden
+    return zoomToBundeslaender(false).then(target => {
+      const box = pixelBox(target), view = visibleBox();
+      const fill = Math.max((box.x1 - box.x0) / view.w, (box.y1 - box.y0) / view.h);
+      check('ein Bundesland füllt die Karte', insideView(box, view) && fill >= 0.6,
+        `Tirol füllt ${Math.round(fill * 100)} % der sichtbaren Karte, ganz sichtbar: ${insideView(box, view)}`);
+      filter.bundeslaender = new Set(['Tirol', 'Wien']);
+      applyFilter();
+      return zoomToBundeslaender(false);
+    }).then(target => {
+      const box = pixelBox(target);
+      check('zwei Bundesländer zeigen ganz Österreich', insideView(box, visibleBox())
+        && target.contains(L.latLng(48.2, 16.37)) && target.contains(L.latLng(47.27, 11.39)), '');
+      filter.bundeslaender = null;
+      applyFilter();
+      return zoomToBundeslaender(false);
+    }).then(target => {
+      check('ohne Auswahl wieder ganz Österreich', insideView(pixelBox(target), visibleBox()), '');
     });
   }
 
