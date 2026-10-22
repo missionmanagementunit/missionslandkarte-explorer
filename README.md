@@ -21,6 +21,22 @@ Der Explorer ist **unabhängig von der Präsentation**
 [missionslandkarte](https://github.com/missionmanagementunit/missionslandkarte)
 und ersetzt sie nicht. Die Präsentation zählt Projekte, der Explorer zeigt Beteiligungen.
 
+## Daten erzeugen
+
+Die Karte liest `data/*.json`. Diese Dateien entstehen aus dem kuratierten Quell-Workbook
+(liegt lokal, nicht im Repo) und den CORDIS-Bulk-Exporten:
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cp .env.example .env              # Pfad zum Workbook eintragen
+./fetch_sources.sh                # CORDIS + Bundesländer-Grenzen nach cache/
+.venv/bin/python build_explorer_data.py   # -> data/*.json, Bericht in reports/
+.venv/bin/python check_explorer_data.py   # Prüfungen, Exit-Code 1 bei Fehlern
+```
+
+Für EU-Projekte ist CORDIS die Quelle (Rollen, Förderung, Daten, Kurzbeschreibung).
+Natürliche Personen (meist Einzelunternehmen) erscheinen so, wie CORDIS sie veröffentlicht.
+
 ## Datenquellen
 
 - [CORDIS](https://cordis.europa.eu/) — Horizon 2020 / Horizon Europe (CC BY 4.0)

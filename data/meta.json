@@ -1,0 +1,46 @@
+{
+  "built": "2026-10-22",
+  "cordis_data_dates": {
+    "HORIZON": "Thu, 08 Oct 2026 15:43:14 GMT",
+    "h2020": "Thu, 08 Oct 2026 15:42:24 GMT"
+  },
+  "counts": {
+    "projects": 1193,
+    "projects_by_source": {
+      "eu_fp": 923,
+      "life": 11,
+      "other": 2,
+      "ffg": 257
+    },
+    "participations": 1692,
+    "participations_by_source": {
+      "eu_fp": 1422,
+      "life": 11,
+      "other": 2,
+      "ffg": 257
+    },
+    "participations_by_role": {
+      "participant": 1127,
+      "coordinator": 341,
+      "thirdParty": 57,
+      "associatedPartner": 98,
+      "None": 1,
+      "sole_applicant": 68
+    },
+    "funding_status": {
+      "amount": 1257,
+      "unknown": 6,
+      "no_eu_funding": 115,
+      "third_party": 57,
+      "not_public": 257
+    },
+    "geo_source": {
+      "cordis": 1389,
+      "city": 133,
+      "none": 4,
+      "org_match": 166
+    },
+    "abstracts": 1192
+  },
+  "attribution": "Daten: CORDIS, Europäische Kommission (CC BY 4.0); LIFE-Projektdatenbank; FFG-Projektdatenbank."
+}
