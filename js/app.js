@@ -7,6 +7,7 @@
   const SEARCH_DEBOUNCE_MS = 200;
   const SEARCH_MIN_CHARS   = 2;
   const HASH_PREFIX        = '#p=';
+  const REPO_COMMIT_URL    = 'https://github.com/missionmanagementunit/missionslandkarte-explorer/commit/';
   const BUNDESLAENDER = ['Burgenland', 'Kärnten', 'Niederösterreich', 'Oberösterreich', 'Salzburg',
                          'Steiermark', 'Tirol', 'Vorarlberg', 'Wien'];
 
@@ -214,6 +215,7 @@
     D.load().then(loaded => {
       data = loaded;
       buildSidebar();
+      renderVersion();
       mapCtrl.map.invalidateSize({ pan: false });  // sofort, nicht erst beim nächsten ResizeObserver-Takt
       applyFilter();
       document.getElementById('meta-line').innerHTML =
@@ -229,6 +231,19 @@
       console.error('[app.js]', err);
       document.getElementById('counter').textContent = 'Daten konnten nicht geladen werden.';
     });
+  }
+
+  /** "Version a15ba9e · 22.10.2026", linked to the commit; "Version: lokal" outside the deployed site. */
+  function renderVersion() {
+    const v = window.EXPLORER_VERSION || {};
+    const el = document.getElementById('version-line');
+    if (!v.commit) {
+      el.textContent = 'Version: lokal';
+      return;
+    }
+    const built = v.built ? ` · ${formatMetaDate(v.built)}` : '';
+    el.innerHTML = `<a href="${REPO_COMMIT_URL}${esc(v.commit)}" target="_blank" rel="noopener" title="Commit ${esc(v.commit)}">`
+      + `Version ${esc(v.commit.slice(0, 7))}</a>${esc(built)}`;
   }
 
   function formatMetaDate(httpDate) {
@@ -286,6 +301,9 @@
     document.querySelectorAll('.filter-pill').forEach(() => document.querySelector('.filter-pill').click());
     check('Pillen heben Filter auf', !filter.missions && !filter.bundeslaender && renderedMatches(D.visibleParticipations(data, filter)), '');
     clickToggle('mission');
+
+    const versionText = document.getElementById('version-line').textContent.trim();
+    check('Versionsangabe sichtbar', /^Version/.test(versionText), versionText);
 
     const boku = D.matchingProjects(data, { ...filter, query: 'BOKU' }).length;
     check('Suche „BOKU“ findet Projekte', boku > 0, `${boku}`);

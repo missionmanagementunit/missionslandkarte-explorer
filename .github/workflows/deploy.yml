@@ -46,6 +46,9 @@ jobs:
           cp -R index.html css js assets _site/
           cp data/*.json _site/data/
           find _site -name .gitkeep -delete
+          # Versionsangabe für die Fußzeile der Seitenleiste: Commit-ID und Erstellungszeit
+          printf 'window.EXPLORER_VERSION = { commit: "%s", built: "%s" };\n' \
+            "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > _site/js/version.js
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

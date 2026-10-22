@@ -222,6 +222,9 @@ button, input, select { font: inherit; color: inherit; }
 }
 .legend-flower-label { font-size: 11px; color: var(--neutral-500); text-align: center; }
 .sidebar-meta { font-size: 10px; line-height: 1.4; color: var(--neutral-600); text-align: center; }
+.sidebar-version { font-size: 10px; color: var(--neutral-600); text-align: center; }
+.sidebar-version a { color: inherit; text-decoration: none; }
+.sidebar-version a:hover { color: var(--neutral-300); text-decoration: underline; }
 
 /* ── Karte (wie .map-container) ────────────────────────────────────── */
 
