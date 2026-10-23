@@ -34,12 +34,14 @@ from pathlib import Path
 import pandas as pd
 from dotenv import load_dotenv
 
-from geo_utils import bundesland_at, load_bundesland_polygons
+from geo_utils import bundesland_at, city_level_participations, load_bundesland_polygons, org_key
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ENV_FILE = PROJECT_DIR / ".env"
 CORDIS_DIR = PROJECT_DIR / "cache" / "cordis"
 CITY_COORDS_FILE = PROJECT_DIR / "build_inputs" / "city_coords.csv"
+# Adresskoordinaten für Organisationen auf Ortsebene — erzeugt von geocode_orgs.py (braucht Netz)
+ORG_GEOCODES_FILE = PROJECT_DIR / "build_inputs" / "org_geocodes.json"
 OUTPUT_DIR = PROJECT_DIR / "data"
 REPORT_DIR = PROJECT_DIR / "reports"
 
@@ -518,6 +520,43 @@ def build_other_projects(curated_other, org_index, city_table, polygons, report,
     return projects, participations, abstracts
 
 
+# Felder, in denen der ursprüngliche Standort erhalten bleibt, wenn ihn die Adresse ersetzt
+SOURCE_FIELDS = ("source_lat", "source_lng", "source_geo", "source_bundesland")
+
+
+def apply_address_geocodes(participations, polygons, report):
+    """
+    Replace city-level dots with the geocoded address of their organisation, where one was found.
+    The original point is kept in source_lat/source_lng/source_geo (and source_bundesland if corrected).
+    """
+    for p in participations:
+        for field in SOURCE_FIELDS:
+            p.setdefault(field, None)
+    if not ORG_GEOCODES_FILE.exists():
+        print("Hinweis: build_inputs/org_geocodes.json fehlt — Punkte auf Ortsebene bleiben (geocode_orgs.py ausführen)")
+        return
+    cache = json.loads(ORG_GEOCODES_FILE.read_text(encoding="utf-8"))
+    for p in city_level_participations(participations):
+        record = cache.get(org_key(p))
+        if not record or record.get("lat") is None:
+            report["still_city_level"].append((p["project_id"], p["name"], p["city"],
+                                               (record or {}).get("reason", "nicht abgefragt")))
+            continue
+        corrected = record.get("bundesland_corrected")
+        if corrected and bundesland_at(record["lat"], record["lng"], polygons) == corrected:
+            # Adresse samt Postleitzahl bestätigt ein anderes Bundesland als angegeben (siehe geocode_orgs.py)
+            report["bundesland_corrected"].append((p["project_id"], p["name"], p["bundesland"], corrected))
+            p["source_bundesland"] = p["bundesland"]
+            p["bundesland"] = corrected
+        # Nochmals prüfen: der Treffer muss im Bundesland der Beteiligung liegen
+        if bundesland_at(record["lat"], record["lng"], polygons) != p["bundesland"]:
+            report["still_city_level"].append((p["project_id"], p["name"], p["city"], "anderes Bundesland"))
+            continue
+        p["source_lat"], p["source_lng"], p["source_geo"] = p["lat"], p["lng"], p["geo_source"]
+        p["lat"], p["lng"], p["geo_source"] = record["lat"], record["lng"], "address"
+        report["address_geocoded"].append((p["project_id"], p["name"], record.get("query", "")))
+
+
 # ── Ausgabe ────────────────────────────────────────────────────────────────────
 
 def write_json_lines(path, records):
@@ -545,6 +584,10 @@ def write_report(path, report, counts):
          ["Projekt-ID", "Projekt", "Organisation", "NUTS", "Bundesland"]),
         ("coords_replaced", "CORDIS-Punkt im falschen Bundesland — durch Ortskoordinaten ersetzt",
          ["Projekt-ID", "Projekt", "Organisation", "CORDIS-Punkt", "liegt in", "angegeben"]),
+        ("address_geocoded", "Punkt von Ortsebene auf Adresse verbessert (OpenStreetMap)",
+         ["Projekt-ID", "Organisation", "Adresse"]),
+        ("still_city_level", "Weiterhin nur Ortsebene", ["Projekt-ID", "Organisation", "Ort", "Grund"]),
+        ("bundesland_corrected", "Bundesland laut Adresse korrigiert", ["Projekt-ID", "Organisation", "vorher", "nachher"]),
         ("geo_corrected", "Von Hand korrigierte Standorte (ORG_GEO_CORRECTIONS)",
          ["Projekt-ID", "Projekt", "Organisation", "Ort", "Bundesland"]),
         ("missing_abstract", "Ohne Kurzbeschreibung", ["Projekt-ID", "Projekt"]),
@@ -580,7 +623,8 @@ def main():
 
     report = {k: [] for k in ("curated_not_in_cordis", "curated_renamed", "amount_differs", "role_differs",
                               "unlocatable", "bundesland_from_point",
-                              "coords_replaced", "geo_corrected", "missing_abstract")}
+                              "coords_replaced", "geo_corrected", "address_geocoded", "still_city_level", "bundesland_corrected",
+                              "missing_abstract")}
     missing_coords = []   # nicht leer -> Abbruch; nichts wird stillschweigend weggelassen
 
     is_eu = curated["Source"] == "EU FP"
@@ -593,6 +637,8 @@ def main():
         lines = "\n".join(f"  {pid} {name}: {org} — {city} ({bl})" for pid, name, org, city, bl in missing_coords)
         raise SystemExit(f"{len(missing_coords)} Beteiligungen ohne Koordinaten — "
                          f"build_inputs/city_coords.csv oder CITY_ALIASES ergänzen:\n{lines}")
+
+    apply_address_geocodes(eu_parts + other_parts, polygons, report)
 
     projects = sorted(eu_projects + other_projects, key=lambda p: p["id"])
     participations = sorted(eu_parts + other_parts,
@@ -620,7 +666,8 @@ def main():
         "built": datetime.date.today().isoformat(),
         "cordis_data_dates": data_dates,
         "counts": counts,
-        "attribution": "Daten: CORDIS, Europäische Kommission (CC BY 4.0); LIFE-Projektdatenbank; FFG-Projektdatenbank.",
+        "attribution": "Daten: CORDIS, Europäische Kommission (CC BY 4.0); LIFE-Projektdatenbank; FFG-Projektdatenbank. "
+                       "Adressen geokodiert mit OpenStreetMap (© OpenStreetMap-Mitwirkende, ODbL).",
     }
     (OUTPUT_DIR / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 

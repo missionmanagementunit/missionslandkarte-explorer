@@ -1,5 +1,5 @@
 {
-  "built": "2026-10-22",
+  "built": "2026-10-23",
   "cordis_data_dates": {
     "HORIZON": "Thu, 08 Oct 2026 15:43:14 GMT",
     "h2020": "Thu, 08 Oct 2026 15:42:24 GMT"
@@ -35,12 +35,13 @@
       "not_public": 257
     },
     "geo_source": {
-      "cordis": 1389,
-      "city": 133,
+      "cordis": 886,
+      "address": 624,
       "none": 4,
-      "org_match": 166
+      "city": 80,
+      "org_match": 98
     },
     "abstracts": 1192
   },
-  "attribution": "Daten: CORDIS, Europäische Kommission (CC BY 4.0); LIFE-Projektdatenbank; FFG-Projektdatenbank."
+  "attribution": "Daten: CORDIS, Europäische Kommission (CC BY 4.0); LIFE-Projektdatenbank; FFG-Projektdatenbank. Adressen geokodiert mit OpenStreetMap (© OpenStreetMap-Mitwirkende, ODbL)."
 }

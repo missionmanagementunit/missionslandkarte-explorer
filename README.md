@@ -31,6 +31,8 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 cp .env.example .env              # Pfad zum Workbook eintragen
 ./fetch_sources.sh                # CORDIS + Bundesländer-Grenzen nach cache/
 .venv/bin/python build_explorer_data.py   # -> data/*.json, Bericht in reports/
+.venv/bin/python geocode_orgs.py          # Adressen für Punkte auf Ortsebene (Netz, nur Neues)
+.venv/bin/python build_explorer_data.py   # nochmals, damit die Adresspunkte übernommen werden
 .venv/bin/python check_explorer_data.py   # Prüfungen, Exit-Code 1 bei Fehlern
 ```
 
@@ -46,6 +48,11 @@ Natürliche Personen (meist Einzelunternehmen) erscheinen so, wie CORDIS sie ver
 `http://127.0.0.1:8765/?selftest=1` prüft im Browser, dass jede Beteiligung genau einmal als
 Punkt erscheint (auch je Filter), dass Suche, Stapel-Liste und Deep Links funktionieren, und
 schreibt das Ergebnis unten in die Seite. `#p=<Projekt-ID>` öffnet direkt eine Projektkarte.
+
+## Entscheidungen
+
+Warum der Explorer so gebaut ist — Datenquellen, Darstellung, bewusste Abweichungen von der
+Präsentation — steht in [docs/ENTSCHEIDUNGEN.md](docs/ENTSCHEIDUNGEN.md).
 
 ## Datenquellen
 

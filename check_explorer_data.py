@@ -27,14 +27,15 @@ SOURCES = {"eu_fp", "ffg", "life", "other"}
 ROLES = {"coordinator", "sole_applicant", "participant", "partner", "thirdParty",
          "associatedPartner", "internationalPartner", None}
 FUNDING_STATUSES = {"amount", "no_eu_funding", "third_party", "not_public", "in_kind", "unknown"}
-GEO_SOURCES = {"cordis", "org_match", "city", "none"}
+GEO_SOURCES = {"cordis", "org_match", "city", "address", "none"}
 BUNDESLAENDER = {"Burgenland", "Kärnten", "Niederösterreich", "Oberösterreich", "Salzburg",
                  "Steiermark", "Tirol", "Vorarlberg", "Wien"}
 
 PROJECT_KEYS = {"id", "acronym", "title", "mission", "source", "programme", "start", "end",
                 "link", "coordinator", "partners_complete"}
 PARTICIPATION_KEYS = {"project_id", "org_id", "name", "short_name", "role", "city", "bundesland", "lat", "lng",
-                      "geo_source", "funding_eur", "funding_status", "ended", "cordis_listed"}
+                      "geo_source", "funding_eur", "funding_status", "ended", "cordis_listed",
+                      "source_lat", "source_lng", "source_geo", "source_bundesland"}
 
 # Interne Spalten des Workbooks dürfen nie als Feld auftauchen. Als Text-Suche wären sie
 # unbrauchbar — "confidence" und "Auswahl" sind auch normale Wörter in Kurzbeschreibungen.
@@ -180,6 +181,20 @@ def check_geography(participations, polygons):
         fail(f"Bundesland ≠ Polygon: {row}")
 
 
+def check_source_points(participations):
+    """Gate 5b: every address point keeps its original point; nothing else carries one."""
+    for x in participations:
+        has_source = x["source_lat"] is not None
+        if x["geo_source"] == "address":
+            if not has_source or x["source_lng"] is None or x["source_geo"] not in {"cordis", "org_match", "city"}:
+                fail(f"{x['project_id']}/{x['name']}: Adresspunkt ohne ursprünglichen Standort")
+        elif has_source or x["source_geo"] is not None:
+            fail(f"{x['project_id']}/{x['name']}: ursprünglicher Standort ohne Adresspunkt")
+        if x["source_bundesland"] is not None and (x["source_bundesland"] not in BUNDESLAENDER
+                                                   or x["source_bundesland"] == x["bundesland"]):
+            fail(f"{x['project_id']}/{x['name']}: ursprüngliches Bundesland unplausibel ({x['source_bundesland']})")
+
+
 def check_funding(projects, participations):
     """Gate 6: funding status agrees with amount, role and source."""
     source_by_id = {p["id"]: p["source"] for p in projects}
@@ -241,6 +256,7 @@ def main():
     check_coordinators(projects, by_project)
     check_danube4all(projects, by_project)
     check_geography(participations, load_bundesland_polygons())
+    check_source_points(participations)
     check_funding(projects, participations)
     check_internal_content(raw_texts)
     check_abstracts(projects, abstracts)
