@@ -239,6 +239,26 @@ Wert in `source_bundesland`. Bei allen anderen Beteiligungen sind diese Felder l
 
 ---
 
+## E14 · Flüssigeres Zoomen: keine Schatten, halbe Zoomstufen
+
+*2026-10-23*
+
+**Entscheidung:**
+- Punkte und Bündel haben **keine Schatten** mehr (CSS `filter: drop-shadow` entfernt). Reicht der Kontrast irgendwo nicht, wird er anders erhöht (z. B. dünne Kontur), nicht mit Filtern.
+- Mausrad und Zoomknöpfe zoomen in **halben Stufen**; die feineren Viertelstufen gelten nur beim Bundesland-Zoom (E09). Eine Scrollbewegung wird länger gesammelt (80 ms), damit sie weniger Zoomvorgänge auslöst.
+- Die Missionsanteile eines Bündels werden **einmal berechnet** und aus den Teilbündeln zusammengesetzt, statt bei jedem Zoomschritt alle Punkte neu zu durchlaufen.
+
+**Warum:** Zoomen ruckelte. Die Schatten stammten aus der Präsentation, wo es nur wenige Dutzend
+Punkte gibt; bei hunderten Elementen muss der Browser in jedem Bild jeden Schatten neu weichzeichnen.
+Die Viertelstufen (eingeführt für E09) hatten auch das Mausrad feiner gemacht und so mehr Zwischenstufen
+mit hochskalierten Kacheln erzeugt.
+
+**Folgen:** Gemessen (Median aus 5 Läufen, Hauptthread-Zeit für 15 Zoomschritte): 156 → 140 ms,
+größter Einzelschritt 16,9 → 15,7 ms. Die Schatten selbst lassen sich ohne Grafikkarte nicht messen;
+ihr Wegfall ist der größere Gewinn und wird im Browser beurteilt.
+
+---
+
 ## Bekannte Grenzen
 
 - **Punkte auf Ortsebene:** 90 Beteiligungen von 62 Organisationen liegen weiterhin auf Ortsebene, vor allem FFG-Partner, für die keine Quelle eine Adresse hat — 61 davon auf dem Wiener Ortspunkt. Adressen lassen sich bei Bedarf von Hand nachtragen.

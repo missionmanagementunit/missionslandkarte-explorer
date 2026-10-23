@@ -13,6 +13,8 @@
   // Startansicht: ganz Österreich, passend zur verfügbaren Breite (fester Zoom 7 schneidet am Handy ab)
   const AUSTRIA_BOUNDS = [[46.37, 9.53], [49.02, 17.16]];
   const START_PADDING  = [16, 16];
+  const DEFAULT_ZOOM_SNAP   = 0.5;
+  const BUNDESLAND_ZOOM_SNAP = 0.25;
   const MAX_ZOOM       = 16;   // Grenze des Esri-Kacheldienstes
   const FOCUS_MAX_ZOOM = 11;   // beim Anspringen eines Projekts nicht näher heran
   const FOCUS_ROOMY_HEIGHT = 400;  // ab so viel sichtbarer Kartenhöhe großzügiger Rand beim Anspringen
@@ -40,13 +42,28 @@
     });
   }
 
-  /** Cluster icon: mission pie with the count in a white centre. */
-  function _clusterIcon(cluster) {
+  /**
+   * Mission counts of a cluster, cached on the cluster object. Combines the cached counts of its
+   * sub-clusters instead of walking all descendant markers again on every zoom step.
+   * Uses markercluster's internal _markers/_childClusters (pinned version 1.5.3).
+   */
+  function _missionCounts(cluster) {
+    if (cluster._explorerCounts) return cluster._explorerCounts;
     const counts = {};
-    cluster.getAllChildMarkers().forEach(m => {
-      const mission = m.part.project.mission;
-      counts[mission] = (counts[mission] || 0) + 1;
-    });
+    const add = (mission, n) => { counts[mission] = (counts[mission] || 0) + n; };
+    if (Array.isArray(cluster._markers) && Array.isArray(cluster._childClusters)) {
+      cluster._markers.forEach(m => add(m.part.project.mission, 1));
+      cluster._childClusters.forEach(c => Object.entries(_missionCounts(c)).forEach(([k, n]) => add(k, n)));
+    } else {
+      cluster.getAllChildMarkers().forEach(m => add(m.part.project.mission, 1));   // Rückfall, falls sich Interna ändern
+    }
+    cluster._explorerCounts = counts;
+    return counts;
+  }
+
+  /** Cluster icon: mission pie with the count in a dark centre. */
+  function _clusterIcon(cluster) {
+    const counts = _missionCounts(cluster);
     const total = cluster.getChildCount();
     const size = total < 10 ? 30 : total < 100 ? 38 : 46;
     const r = size / 2;
@@ -140,8 +157,11 @@
    * handlers.onStackClick(parts) — a stack too big to fan out was clicked
    */
   function create(containerId, handlers) {
-    // Viertelstufen: ein Bundesland soll die Karte möglichst füllen, halbe Stufen ließen oft ein Viertel leer
-    const map = L.map(containerId, { maxZoom: MAX_ZOOM, zoomSnap: 0.25, zoomDelta: 0.5, zoomControl: true });
+    // Halbe Stufen für Mausrad und Knöpfe; feinere Viertelstufen nur beim Bundesland-Zoom (siehe fitBundeslaender).
+    // Längeres wheelDebounceTime fasst eine Scrollbewegung zu weniger Zoomvorgängen zusammen.
+    const map = L.map(containerId, {
+      maxZoom: MAX_ZOOM, zoomSnap: DEFAULT_ZOOM_SNAP, zoomDelta: 0.5, wheelDebounceTime: 80, zoomControl: true,
+    });
     map.fitBounds(AUSTRIA_BOUNDS, { padding: START_PADDING });
 
     // Leaflet misst seinen Container nur beim Start. Wird die Filterleiste danach höher
@@ -251,8 +271,12 @@
           paddingTopLeft: START_PADDING,
           paddingBottomRight: [right + START_PADDING[0], bottom + START_PADDING[1]],
         };
+        // Nur für diesen Zoom Viertelstufen, damit das Bundesland die Karte möglichst füllt;
+        // flyToBounds/fitBounds berechnen das Ziel sofort, danach gilt wieder die halbe Stufe.
+        map.options.zoomSnap = BUNDESLAND_ZOOM_SNAP;
         if (animate === false) map.fitBounds(target, { ...options, animate: false });
         else map.flyToBounds(target, { ...options, duration: 0.8 });
+        map.options.zoomSnap = DEFAULT_ZOOM_SNAP;
         return target;
       });
     }

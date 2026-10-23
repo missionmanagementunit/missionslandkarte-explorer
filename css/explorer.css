@@ -249,12 +249,12 @@ button, input, select { font: inherit; color: inherit; }
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
 }
 .dot--lead { box-shadow: 0 0 0 2px var(--neutral-900); }
 
 .cluster-icon { display: grid; place-items: center; }
-.cluster-icon svg { grid-area: 1 / 1; display: block; filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4)); }
+/* Keine Schatten (filter) auf Punkten und Bündeln: bei hunderten Elementen macht das jeden Zoom ruckelig */
+.cluster-icon svg { grid-area: 1 / 1; display: block; }
 .cluster__count {
   grid-area: 1 / 1;
   z-index: 1;
